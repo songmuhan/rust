@@ -43,7 +43,12 @@ impl Mul<Mat2> for Mat2 {
 
     /// Consult <https://www.mathsisfun.com/algebra/matrix-multiplying.html>
     fn mul(self, rhs: Mat2) -> Self::Output {
-        todo!()
+        let a = self.a * rhs.a + self.b * rhs.c;
+        let b = self.a * rhs.b + self.b * rhs.d;
+        let c = self.c * rhs.a + self.d * rhs.c;
+        let d = self.c * rhs.b + self.d * rhs.d;
+
+        Self { a, b, c, d }
     }
 }
 
@@ -54,21 +59,27 @@ impl Mul<Vec2> for Mat2 {
     ///
     /// Consult <https://www.mathsisfun.com/algebra/matrix-multiplying.html>
     fn mul(self, rhs: Vec2) -> Self::Output {
-        todo!()
+        let a = self.a * rhs.a + self.c * rhs.b;
+        let b = self.b * rhs.a + self.d * rhs.b;
+        Vec2 { a, b }
     }
 }
 
 impl Mat2 {
     /// Calculates the power of matrix.
     fn power(self, power: u64) -> Mat2 {
-        todo!()
+        let mut mat = self;
+        for i in 2..=power {
+            mat = mat * self;
+        }
+        mat
     }
 }
 
 impl Vec2 {
     /// Gets the upper value of vector.
     fn get_upper(self) -> u64 {
-        todo!()
+        u64::max(self.a, self.b)
     }
 }
 
@@ -119,6 +130,12 @@ impl FMat2 {
     /// );
     /// ```
     pub fn inverse(self) -> Self {
-        todo!()
+        let factor = 1.0 / (self.a * self.d - self.b * self.c);
+        Self {
+            a: factor * self.d,
+            b: -1.0 * factor * self.b,
+            c: -1.0 * factor * self.c,
+            d: factor * self.a,
+        }
     }
 }
