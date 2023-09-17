@@ -1,10 +1,9 @@
 //! Calculator.
 
+use anyhow::*;
 use std::collections::HashMap;
 
-use anyhow::*;
-
-use super::syntax::{Command, Expression};
+use super::syntax::{BinOp, Command, Expression};
 
 /// Calculator's context.
 #[derive(Debug, Default, Clone)]
@@ -26,7 +25,30 @@ impl Context {
 
     /// Calculates the given expression. (We assume the absence of overflow.)
     pub fn calc_expression(&self, expression: &Expression) -> Result<f64> {
-        todo!("fill here")
+        match expression {
+            Expression::Num(num) => Ok(*num),
+            Expression::BinOp { op, lhs, rhs } => {
+                let left = self.calc_expression(lhs)?;
+                let right = self.calc_expression(rhs)?;
+                match op {
+                    BinOp::Add => Ok(left + right),
+                    BinOp::Subtract => Ok(left - right),
+                    BinOp::Divide => {
+                        if right == 0 as f64 {
+                            Err(Error::msg("divide zero"))
+                        } else {
+                            Ok(left / right)
+                        }
+                    }
+                    BinOp::Multiply => Ok(left * right),
+                    BinOp::Power => Ok(f64::powf(left, right)),
+                }
+            }
+            Expression::Variable(var) => match self.variables.get(var) {
+                Some(value) => Ok(*value),
+                None => Err(Error::msg("message")),
+            },
+        }
     }
 
     /// Calculates the given command. (We assume the absence of overflow.)
@@ -41,6 +63,20 @@ impl Context {
     ///
     /// After calculating commad `3 ^ 2` => Context's variables = `{($0,8),(v,1),($1,9)}`
     pub fn calc_command(&mut self, command: &Command) -> Result<(String, f64)> {
-        todo!("fill here")
+        let rc = self.calc_expression(&command.expression)?;
+        let var = if command.variable.is_none() {
+            let string = format!("${}", self.anonymous_counter);
+            self.anonymous_counter += 1;
+            string
+        } else {
+            command.variable.clone().unwrap()
+        };
+
+        let _ = self
+            .variables
+            .entry(var.clone())
+            .and_modify(|value| *value = rc)
+            .or_insert(rc);
+        Ok((var, rc))
     }
 }
