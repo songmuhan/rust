@@ -1,12 +1,14 @@
 //! Implement your own minimal `itertools` crate.
 
+use std::collections::HashSet;
 use std::hash::Hash;
 
 /// Iterator that iterates over the given iterator and returns only unique elements.
 #[allow(missing_debug_implementations)]
 pub struct Unique<I: Iterator> {
     // TODO: remove `_marker` and add necessary fields as you want
-    _marker: std::marker::PhantomData<I>,
+    iter: I,
+    seen: HashSet<I::Item>,
 }
 
 impl<I: Iterator> Iterator for Unique<I>
@@ -16,7 +18,9 @@ where
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        self.iter
+            .by_ref()
+            .find(|item| self.seen.insert(item.clone()))
     }
 }
 
@@ -24,7 +28,8 @@ where
 #[allow(missing_debug_implementations)]
 pub struct Chain<I1: Iterator, I2: Iterator> {
     // TODO: remove `_marker` and add necessary fields as you want
-    _marker: std::marker::PhantomData<(I1, I2)>,
+    first: I1,
+    second: I2,
 }
 
 impl<T: Eq + Hash + Clone, I1: Iterator<Item = T>, I2: Iterator<Item = T>> Iterator
@@ -33,7 +38,12 @@ impl<T: Eq + Hash + Clone, I1: Iterator<Item = T>, I2: Iterator<Item = T>> Itera
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let rc = self.first.next();
+        if rc.is_none() {
+            self.second.next()
+        } else {
+            rc
+        }
     }
 }
 
@@ -41,14 +51,22 @@ impl<T: Eq + Hash + Clone, I1: Iterator<Item = T>, I2: Iterator<Item = T>> Itera
 #[allow(missing_debug_implementations)]
 pub struct Enumerate<I: Iterator> {
     // TODO: remove `_marker` and add necessary fields as you want
-    _marker: std::marker::PhantomData<I>,
+    cur: usize,
+    iter: I,
 }
 
 impl<I: Iterator> Iterator for Enumerate<I> {
     type Item = (usize, I::Item);
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let iter_rc = self.iter.next();
+        if let Some(item) = self.iter.next() {
+            let rc = Some((self.cur, item));
+            self.cur += 1;
+            rc
+        } else {
+            None
+        }
     }
 }
 
@@ -59,14 +77,20 @@ impl<I: Iterator> Iterator for Enumerate<I> {
 #[allow(missing_debug_implementations)]
 pub struct Zip<I1: Iterator, I2: Iterator> {
     // TODO: remove `_marker` and add necessary fields as you want
-    _marker: std::marker::PhantomData<(I1, I2)>,
+    first: I1,
+    second: I2,
 }
 
 impl<I1: Iterator, I2: Iterator> Iterator for Zip<I1, I2> {
     type Item = (I1::Item, I2::Item);
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        let first_iter = self.first.next();
+        let second_iter = self.second.next();
+        match (first_iter, second_iter) {
+            (Some(first), Some(second)) => Some((first, second)),
+            _ => None,
+        }
     }
 }
 
@@ -77,7 +101,10 @@ pub trait MyIterTools: Iterator {
     where
         Self: Sized,
     {
-        todo!()
+        Unique {
+            iter: self,
+            seen: HashSet::new(),
+        }
     }
 
     /// Returns an iterator that chains `self` and `other` together.
@@ -85,7 +112,10 @@ pub trait MyIterTools: Iterator {
     where
         Self: Sized,
     {
-        todo!()
+        Chain {
+            first: self,
+            second: other,
+        }
     }
 
     /// Returns an iterator that iterates over `self` and enumerates each element.
@@ -93,7 +123,7 @@ pub trait MyIterTools: Iterator {
     where
         Self: Sized,
     {
-        todo!()
+        Enumerate { cur: 0, iter: self }
     }
 
     /// Returns an iterator that zips `self` and `other` together.
@@ -101,7 +131,10 @@ pub trait MyIterTools: Iterator {
     where
         Self: Sized,
     {
-        todo!()
+        Zip {
+            first: self,
+            second: other,
+        }
     }
 
     /// Foldleft for `MyIterTools`
@@ -110,7 +143,11 @@ pub trait MyIterTools: Iterator {
         Self: Sized,
         F: FnMut(Self::Item, T) -> T,
     {
-        todo!()
+        let mut sum = init;
+        for value in self {
+            sum = f(value, sum);
+        }
+        sum
     }
 }
 

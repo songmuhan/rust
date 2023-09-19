@@ -10,7 +10,10 @@ pub trait Transform<T> {
 
 impl<T1, T2, Tr1: Transform<T1>, Tr2: Transform<T2>> Transform<(T1, T2)> for (Tr1, Tr2) {
     fn transform(&self, value: (T1, T2)) -> (T1, T2) {
-        todo!()
+        (
+            Tr1::transform(&self.0, value.0),
+            Tr2::transform(&self.1, value.1),
+        )
     }
 }
 
@@ -20,7 +23,7 @@ pub struct Identity;
 
 impl<T> Transform<T> for Identity {
     fn transform(&self, value: T) -> T {
-        todo!()
+        value
     }
 }
 
@@ -42,7 +45,7 @@ impl<T, F: Fn(T) -> T> From<F> for Custom<T, F> {
 
 impl<T, F: Fn(T) -> T> Transform<T> for Custom<T, F> {
     fn transform(&self, value: T) -> T {
-        todo!()
+        (self.f)(value)
     }
 }
 
@@ -67,7 +70,10 @@ impl<T, Tr: Transform<T>> Repeat<T, Tr> {
 
 impl<T, Tr: Transform<T>> Transform<T> for Repeat<T, Tr> {
     fn transform(&self, mut value: T) -> T {
-        todo!()
+        for i in 0..self.n {
+            value = self.inner.transform(value)
+        }
+        value
     }
 }
 
@@ -90,6 +96,15 @@ impl<T: Clone + Eq, Tr: Transform<T>> RepeatUntilConverge<T, Tr> {
 
 impl<T: Clone + Eq, Tr: Transform<T>> Transform<T> for RepeatUntilConverge<T, Tr> {
     fn transform(&self, mut value: T) -> T {
-        todo!()
+        let mut previous = value;
+        loop {
+            let cur = self.inner.transform(previous.clone());
+            if cur == previous {
+                break;
+            } else {
+                previous = cur;
+            }
+        }
+        previous
     }
 }
