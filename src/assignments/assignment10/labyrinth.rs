@@ -13,12 +13,16 @@ use std::cell::RefCell;
 #[derive(Debug)]
 pub struct Husband {
     brain: RefCell<[usize; 100]>,
+    wife: RefCell<usize>,
 }
 
 impl Husband {
     /// What might a husband, who is looking for his wife's ID my_wife, be thinking?
     pub fn seeking(my_wife: usize) -> Self {
-        todo!()
+        Husband {
+            brain: RefCell::new([0; 100]),
+            wife: RefCell::new(my_wife),
+        }
     }
 
     #[allow(missing_docs)]
@@ -29,7 +33,8 @@ impl Husband {
     /// Based on the information about currently visited room number and someone's wife ID trapped inside,
     /// what the husband should do next?
     pub fn carefully_checks_whos_inside(&self, room: usize, wife: usize) {
-        todo!()
+        self.brain.borrow_mut()[room] = wife;
+        *self.wife.borrow_mut() = wife;
     }
 }
 
@@ -43,6 +48,6 @@ impl Iterator for Strategy<'_> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        Some(*self.husband.wife.borrow())
     }
 }
