@@ -15,7 +15,7 @@ use itertools::*;
 /// assert_eq!(res, vec![2.0, 4.0, 6.0, 8.0, 10.0]);
 /// ```
 pub fn vec_add(lhs: &[f64], rhs: &[f64]) -> Vec<f64> {
-    todo!()
+    lhs.iter().zip(rhs).map(|(v1, v2)| v1 + v2).collect_vec()
 }
 
 /// dot product of two arrays
@@ -35,7 +35,7 @@ pub fn vec_add(lhs: &[f64], rhs: &[f64]) -> Vec<f64> {
 /// assert_eq!(res, 55.0);
 /// ```
 pub fn dot_product(lhs: &[f64], rhs: &[f64]) -> f64 {
-    todo!()
+    lhs.iter().zip(rhs).map(|(v1, v2)| v1 * v2).sum()
 }
 
 /// Matrix multiplication
@@ -68,5 +68,11 @@ pub fn dot_product(lhs: &[f64], rhs: &[f64]) -> f64 {
 /// assert_eq!(ans, res);
 /// ```
 pub fn matmul(lhs: &[Vec<f64>], rhs: &[Vec<f64>]) -> Vec<Vec<f64>> {
-    todo!()
+    lhs.iter()
+        .map(|row| {
+            rhs.iter()
+                .map(|column| dot_product(row, column))
+                .collect_vec()
+        })
+        .collect_vec()
 }

@@ -3,6 +3,8 @@
 use std::fmt;
 use std::{iter::zip, ops::*};
 
+use ntest::assert_false;
+
 /// An signed integer with infinite precision implemented with an "carrier" vector of `u32`s.
 ///
 /// The vector is interpreted as a base 2^(32 * (len(carrier) - 1)) integer, where negative
@@ -35,13 +37,13 @@ pub struct BigInt {
 impl BigInt {
     /// Create a new `BigInt` from a `usize`.
     pub fn new(n: u32) -> Self {
-        todo!()
+        BigInt { carrier: vec![n] }
     }
 
     /// Creates a new `BigInt` from a `Vec<u32>`.
     pub fn new_large(carrier: Vec<u32>) -> Self {
-        assert!(!carrier.is_empty());
-        todo!()
+        assert_false!(carrier.is_empty());
+        BigInt { carrier }
     }
 }
 
@@ -49,18 +51,49 @@ const SIGN_MASK: u32 = 1 << 31;
 
 impl BigInt {
     /// Extend `self` to `len` bits.
-    fn sign_extension(&self, len: usize) -> Self {
-        todo!()
+    pub fn sign_extension(&self, len: usize) -> Self {
+        let sign_extended = if self.carrier.first().unwrap() & SIGN_MASK == 0 {
+            vec![0; len - self.carrier.len()]
+        } else {
+            vec![u32::MAX; len - self.carrier.len()]
+        };
+        BigInt {
+            carrier: [sign_extended, self.carrier.clone()].concat(),
+        }
     }
 
-    /// Compute the two's complement of `self`.
     fn two_complement(&self) -> Self {
-        todo!()
+        let complement = self.carrier.iter().map(|&x| !x).collect();
+        let one = BigInt::new(1);
+        BigInt::new_large(complement) + one
     }
 
     /// Truncate a `BigInt` to the minimum length.
     fn truncate(&self) -> Self {
-        todo!()
+        let mut carrier = self.carrier.clone();
+        if carrier.len() <= 1 {
+            Self { carrier }
+        } else {
+            let mut index = 0;
+            let sign = *carrier.first().unwrap();
+            if sign != 0 && sign != u32::MAX {
+                Self { carrier }
+            } else {
+                for (i, value) in carrier.iter().enumerate().skip(1) {
+                    if *value == sign {
+                        index = i;
+                    } else {
+                        if *value & SIGN_MASK == sign & SIGN_MASK {
+                            index = i;
+                        }
+                        break;
+                    }
+                }
+                Self {
+                    carrier: carrier[index..].to_vec(),
+                }
+            }
+        }
     }
 }
 
@@ -68,7 +101,32 @@ impl Add for BigInt {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        todo!()
+        let len = self.carrier.len().max(rhs.carrier.len());
+        let self_extended = self.sign_extension(len + 1);
+        let rhs_extended = rhs.sign_extension(len + 1);
+
+        let mut result = Vec::new();
+        let mut carry = 0;
+        for (a, b) in self_extended
+            .carrier
+            .iter()
+            .rev()
+            .zip(rhs_extended.carrier.iter().rev())
+        {
+            let sum = a.wrapping_add(*b).wrapping_add(carry);
+            if sum < *a || sum < *b {
+                carry = 1;
+            } else {
+                carry = 0;
+            }
+            result.push(sum);
+        }
+        if carry > 0 {
+            _ = result.pop();
+        }
+        result.reverse();
+
+        BigInt::new_large(result).truncate()
     }
 }
 
@@ -76,7 +134,7 @@ impl Sub for BigInt {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        todo!()
+        self.add(rhs.two_complement())
     }
 }
 
