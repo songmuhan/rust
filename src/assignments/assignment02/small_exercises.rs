@@ -61,5 +61,5 @@ pub fn chooses(n: u64) -> Vec<u64> {
 /// For instance, `zip(vec![1, 2, 3], vec![4, 5])` equals to `vec![(1, 4), (2, 5)]`.
 /// Here, `3` is ignored because it doesn't have a partner.
 pub fn zip(lhs: Vec<u64>, rhs: Vec<u64>) -> Vec<(u64, u64)> {
-    lhs.into_iter().zip(rhs.into_iter()).collect()
+    lhs.into_iter().zip(rhs).collect()
 }

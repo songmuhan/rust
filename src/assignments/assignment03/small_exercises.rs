@@ -158,7 +158,7 @@ pub fn organize(commands: Vec<String>) -> HashMap<String, HashSet<String>> {
             "Add" => {
                 let _ = organization
                     .entry(department.to_string())
-                    .or_insert_with(HashSet::new)
+                    .or_default()
                     .insert(person.to_string());
             }
             "Remove" => {
@@ -173,7 +173,7 @@ pub fn organize(commands: Vec<String>) -> HashMap<String, HashSet<String>> {
                     let _ = old_dept_employees.remove(person);
                     let _ = organization
                         .entry(department.to_string())
-                        .or_insert_with(HashSet::new)
+                        .or_default()
                         .insert(person.to_string());
                 }
             }
