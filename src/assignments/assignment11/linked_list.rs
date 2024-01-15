@@ -42,37 +42,110 @@ impl<T: Debug> SinglyLinkedList<T> {
 
     /// Adds the given node to the front of the list.
     pub fn push_front(&mut self, value: T) {
-        todo!()
+        let mut node = Node::new(value);
+        node.next = self.head.take().map(Box::new);
+        self.head = Some(node);
     }
 
     /// Adds the given node to the back of the list.
     pub fn push_back(&mut self, value: T) {
-        todo!()
+        match self.head {
+            None => self.head = Some(Node::new(value)),
+            Some(ref mut node) => {
+                let mut current = &mut node.next;
+                loop {
+                    match current {
+                        None => {
+                            *current = Some(Box::new(Node::new(value)));
+                            break;
+                        }
+                        Some(boxed_next) => {
+                            current = &mut boxed_next.next;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /// Removes and returns the node at the front of the list.
     pub fn pop_front(&mut self) -> Option<T> {
-        todo!()
+        let head = self.head.take();
+        match head {
+            None => None,
+            Some(node) => {
+                self.head = node.next.map(|v| *v);
+                Some(node.value)
+            }
+        }
     }
 
     /// Removes and returns the node at the back of the list.
     pub fn pop_back(&mut self) -> Option<T> {
-        todo!()
+        match &mut self.head {
+            None => None,
+            Some(ref mut head) => {
+                if head.next.is_none() {
+                    self.head.take().map(|node| node.value)
+                } else {
+                    let mut cur = &mut *head;
+                    loop {
+                        if cur.next.as_ref().is_some() && cur.next.as_ref().unwrap().next.is_none()
+                        {
+                            // .... cur -> cur.next -> NULL
+                            return cur.next.take().map(|node| node.value);
+                        } else {
+                            cur = &mut *cur.next.as_mut().unwrap();
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    /// Create a new list from the given vector `vec`.
+    /// Create a new list from the given vector `vec`.p
     pub fn from_vec(vec: Vec<T>) -> Self {
-        todo!()
+        let mut list = Self::new();
+        for item in vec.into_iter().rev() {
+            list.push_front(item);
+        }
+        list
     }
 
     /// Convert the current list into a vector.
     pub fn into_vec(self) -> Vec<T> {
-        todo!()
+        let mut v = Vec::new();
+        let mut list = self;
+        loop {
+            match list.pop_front() {
+                None => return v,
+                Some(value) => {
+                    v.push(value);
+                }
+            }
+        }
     }
 
     /// Return the length (i.e., number of nodes) of the list.
     pub fn length(&self) -> usize {
-        todo!()
+        match &self.head {
+            None => 0,
+            Some(head) => {
+                match &head.next {
+                    None => 1,
+                    Some(node) => {
+                        // head -> node -> ..
+                        let mut count = 2;
+                        let mut current = &node.next;
+                        while let Some(node) = current {
+                            count += 1;
+                            current = &node.next;
+                        }
+                        count
+                    }
+                }
+            }
+        }
     }
 
     /// Apply function `f` on every element of the list.
@@ -81,10 +154,10 @@ impl<T: Debug> SinglyLinkedList<T> {
     ///
     /// `self`: `[1, 2]`, `f`: `|x| x + 1` ==> `[2, 3]`
     pub fn map<F: Fn(T) -> T>(self, f: F) -> Self {
-        todo!()
+        Self::from_vec(self.into_vec().into_iter().map(f).collect::<Vec<_>>())
     }
 
-    /// Apply given function `f` for each adjacent pair of elements in the list.
+    /// Apply given function `f` for each adjacent pair of elements in the vec.
     /// If `self.length() < 2`, do nothing.
     ///
     /// # Examples
@@ -97,7 +170,20 @@ impl<T: Debug> SinglyLinkedList<T> {
     where
         T: Clone,
     {
-        todo!()
+        if self.length() < 2 {
+            return self;
+        }
+
+        let mut iter = self.into_vec().into_iter();
+        let mut result = Vec::new();
+
+        let mut current = iter.next().unwrap(); // Safe to unwrap because length >= 2
+        for next in iter {
+            result.push(f(current.clone(), next.clone()));
+            current = next;
+        }
+
+        Self::from_vec(result)
     }
 }
 
@@ -109,6 +195,11 @@ impl<T: Debug> SinglyLinkedList<SinglyLinkedList<T>> {
     /// `self`: `[[1, 2, 3], [4, 5, 6], [7, 8]]`
     /// ==> `[1, 2, 3, 4, 5, 6, 7, 8]`
     pub fn flatten(self) -> SinglyLinkedList<T> {
-        todo!()
+        SinglyLinkedList::from_vec(
+            self.into_vec()
+                .into_iter()
+                .flat_map(SinglyLinkedList::into_vec)
+                .collect::<Vec<_>>(),
+        )
     }
 }
